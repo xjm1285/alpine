@@ -1,16 +1,17 @@
 FROM alpine:3.5
+MAINTAINER Jimmy Xiao <xjm1285@gmail.com>
 
-RUN apk add --update \
-    build-base git \
-    python python-dev py-pip linux-headers \
-    postgresql-dev openldap-dev nodejs libxml2-dev libxslt-dev libjpeg-turbo-dev \
-  && pip install virtualenv \
-  && rm -rf /var/cache/apk/*
+ENV LANG=en_US.UTF-8 \
+    TZ="Asia/Shanghai" \
+    S6_VERSION=v1.18.1.5
 
-WORKDIR /app
+# add s6
+RUN apk add --update --no-cache curl tzdata \
+    && cp /usr/share/zoneinfo/"${TZ}" /etc/localtime \
+    && echo "${TZ}" > /etc/timezone \
+    && curl -sSL https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION}/s6-overlay-amd64.tar.gz \
+    | tar xfz - -C / \
+    && apk del --no-cache tzdata curl libcurl libssh2 ca-certificates
 
-ONBUILD COPY . /app
-ONBUILD RUN virtualenv /env && /env/bin/pip install -r /app/base/requirements.txt
-
-EXPOSE 8069
-CMD ["/env/bin/python", "base/odoo-bin", " --addons-path=gooderp_addons"]
+ENTRYPOINT ["/init"]
+CMD []
